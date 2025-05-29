@@ -1,4 +1,4 @@
-#install.packages ("tinytex")
+# #install.packages ("tinytex")
 # load packages -----------------------------------------------------------
 library(tidyverse)
 library(RSelenium)
@@ -10,8 +10,12 @@ require(rvest)
 require(httr)
 require(writexl)
 require(openxlsx)
-#
-# RUNS SCRAPING & PROCESSING SCRIPTS IN ORDER TO GENERATE FINAL DAT FILE
+
+#----PURPOSE:----
+# This master script runs the processing and scraping scripts in order to generate the
+# PRMS and SRP dat files. After both the PRMS and SRP models are run, the remaining scripts
+# process the model outputs to generate a single supply dataset, Raw_Flows.csv, which
+# serves as an input for DWRAT. 
 
 # Include forecasted data from CNRFC in the datasets? ----
 # (This should be either "TRUE" or "FALSE")
@@ -64,7 +68,7 @@ modeler_name = "PAlemi" # has to be altered manually
 
 # generate PRMS model input -----------------------------------------------
 source(here("Scripts/PRISM_HTTP_Scraper.R")) #downloads PRISM climate data for both PRMS and SRP stations simultaneously
-source(here("Scripts/PRISM_Processor.R"))
+source(here("Scripts/PRISM_PRMS_Processor.R"))
 print(Prism_Processed)
 source(here("Scripts/NOAA_API_Scraper.R"))
 #source(here("Scripts/CNRFC_API_Scraper.R")) #downloads CNRFC data for both PRMS and SRP stations simultaneously
