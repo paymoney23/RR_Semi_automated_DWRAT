@@ -1,7 +1,7 @@
 let
     Source = Csv.Document(File.Contents("C:\Users\palemi\Water Boards\Supply and Demand Assessment - Documents\Watershed Folders\Test_Russian\Data\GIS_Preprocessing\RR_pods_manual_review.csv"),[Delimiter=",", Columns=54, Encoding=65001, QuoteStyle=QuoteStyle.None]),
     Promoted_Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
-    Changed_Type = Table.TransformColumnTypes(Promoted_Headers,{{"Join_Count", Int64.Type}, {"TARGET_FID", Int64.Type}, {"APPLICATION_NUMBER", type text}, {"COUNTY", type text}, {"LATITUDE", type number}, {"LONGITUDE", type number}, {"POD_ID", Int64.Type}, {"FFMTRS", type text}, {"Range", type text}, {"Section", Int64.Type}, {"TownshipRange", type text}}),
+    Changed_Type = Table.TransformColumnTypes(Promoted_Headers,{{"Join_Count", Int64.Type}, {"TARGET_FID", Int64.Type}, {"APPLICATION_NUMBER", type text}, {"COUNTY", type text}, {"LATITUDE", type number}, {"LONGITUDE", type number}, {"POD_ID", Int64.Type}, {"FFMTRS", type text}, {"Range", type text}, {"Section", Int64.Type}, {"Township", type text}}),
     
     // Keep only several critical columns
     Keep_essential_columns = Table.SelectColumns(Changed_Type,{"APPLICATION_NUMBER", "COUNTY", "LATITUDE", "LONGITUDE", "POD_ID", "SOURCE_NAME", "WATERSHED", "FFMTRS", "MTRS", "TRIB_DESC"}),
