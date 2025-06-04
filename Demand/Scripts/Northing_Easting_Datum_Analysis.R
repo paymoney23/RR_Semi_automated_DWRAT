@@ -149,6 +149,7 @@ for (i in 1:nrow(resTibble)) {
     
     cat(col_grey("\t\tOut of CA bounds"))
     
+  # Style bold and color blue coordinates that are closest to the watershed polygon
   } else if (paste0(resTibble$ZONE[i], "_", resTibble$DATUM[i]) %in% closestRow$KEY) {
     
     outputStr %>%
@@ -158,6 +159,7 @@ for (i in 1:nrow(resTibble)) {
     
     cat(style_bold(col_blue(paste0("\t\tClosest to ", ws$ID[1]))))
     
+  # Otherwise, just output the text normally
   } else {
     
     cat(outputStr)
