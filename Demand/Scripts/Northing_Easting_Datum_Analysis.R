@@ -112,7 +112,7 @@ closestRow <- resTibble %>%
 
 
 
-cat("\nNAD83 latitude and longitude coordinates assuming different initial datums and zones:\n\n")
+cat("\n\n\nNAD83 latitude and longitude coordinates assuming different initial datums and zones:\n\n")
 
 
 
