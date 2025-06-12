@@ -20,8 +20,11 @@ mainProcedure <- function () {
   #   (4) "[ID]_AppID_List.xlsx" (a spreadsheet with just application numbers)
   #   (5) "[ID]_PODs.xlsx" (a spreadsheet with geographic coordinates, sub-basin assignments, and HUC-12 assignments)
   
+  # It will also generate a geopackage file with layers useful for the dashboard
   
   
+  
+  # Get the watershed and demand dataset range
   source("Scripts/Watershed_Selection.R")
   source("Scripts/Dataset_Year_Range.R")
   
@@ -472,7 +475,8 @@ generateGPKG <- function (ws, wsBound, assignedDF, huc12, catchDF, mdtDF) {
   # (3) HUC-12 sub-basins ('huc12')
   # (4) Hydrologic Model NHD Catchments ('catchDF')
   # (5) Hydrologic Model NHD Flowlines (need to read in - watershed-specific!!!)
-  
+  # (6) Watershed Mask
+
   
   
   # Read in NHD Flowlines
@@ -509,7 +513,37 @@ generateGPKG <- function (ws, wsBound, assignedDF, huc12, catchDF, mdtDF) {
   
   
   
-  # Write these layers to a file
+  # Prepare the watershed mask layer next
+  # Use 'wsBound' and a generic rectangle that covers California to create a mask layer
+  # (The mask layer will be the rectangle with the watershed's polygon subtracted out)
+  
+  
+  
+  # Create the generic rectangle layer
+  universalMask <- c(-131.8766, 50.95556, 
+                     -105.8087, 50.89833, 
+                     -105.8659, 24.83043, 
+                     -131.9338, 24.88766, 
+                     -131.8766, 50.95556) %>%
+    matrix(ncol = 2, byrow = TRUE) %>%
+    data.frame() %>%
+    st_as_sf(coords = 1:2, crs = "epsg:4269") %>%
+    summarize(geometry = st_combine(geometry)) %>% 
+    st_cast("POLYGON") %>%
+    st_transform(st_crs(wsBound))
+  
+  
+  
+  # Create the mask layer for the watershed
+  # (The mask layer will contain no fields except for "geometry" and an ID column)
+  wsMask <- st_difference(universalMask, wsBound) %>%
+    select(geometry) %>%
+    mutate(FEATUREID = 1) %>%
+    select(FEATUREID, geometry)
+  
+  
+  
+  # Write all of these layers to a file
   st_write(wsBound,
            paste0("OutputData/", ws$ID, "_GIS_Layers.gpkg"), 
            layer = "Watershed_Boundary",
@@ -560,6 +594,13 @@ generateGPKG <- function (ws, wsBound, assignedDF, huc12, catchDF, mdtDF) {
   st_write(flowLines,
            paste0("OutputData/", ws$ID, "_GIS_Layers.gpkg"),
            layer = "Hydro_Model_NHD_Flowlines",
+           append = FALSE)
+  
+  
+  
+  st_write(wsMask,
+           paste0("OutputData/", ws$ID, "_GIS_Layers.gpkg"),
+           layer = "Watershed_Mask",
            append = FALSE)
   
   
