@@ -343,27 +343,47 @@ mainProcedure <- function () {
   
   
   # Create output files
-  write_xlsx(list("Monthly_Demand" = monthlyDF),
-             paste0("OutputData/", ws$ID, "_Monthly_Demand.xlsx"))
+  write_csv(monthlyDF %>%
+              select(APPLICATION_NUMBER, YEAR, MONTH, TYPE, DIVERSION),
+            paste0("OutputData/", ws$ID, "_Monthly_Demand.csv"))
   
   
   
-  write_xlsx(list("DWRAT_Allocations" = allocationsDF),
+  write_xlsx(list("Sheet1" = allocationsDF %>%
+                    select(APPLICATION_NUMBER, ALLOCATIONS,
+                           Curtailment, DEMAND, `SHORTAGE %`,
+                           BASIN, PRIORITY, Month) %>%
+                    rename(`Application ID` = APPLICATION_NUMBER)),
              paste0("OutputData/", ws$ID, "_DWRAT_Allocations.xlsx"))
   
   
   
-  write_xlsx(list("AppID_List" = appDF),
+  write_xlsx(list("Sheet1" = appDF %>%
+                    select(APPLICATION_NUMBER)),
              paste0("OutputData/", ws$ID, "_AppID_List.xlsx"))
   
   
   
-  write_xlsx(list("MDT" = mdtDF),
-             paste0("OutputData/", ws$ID, "_MDT.xlsx"))
+  write_csv(mdtDF %>%
+              mutate(BASIN = ASSIGNED_NHD_CAT) %>%
+              select(APPLICATION_NUMBER, all_of(contains("_MEAN_DIV")), 
+                     TOTAL_EXPECTED_ANNUAL_DIVERSION, TOTAL_MAY_SEPT_DIV,
+                     WATER_RIGHT_TYPE, WATER_RIGHT_STATUS, PRIMARY_OWNER_TYPE,
+                     APPLICATION_PRIMARY_OWNER, SOURCE_NAME, TRIB_DESC, WATERSHED,
+                     PRIMARY_USE, `FULLY NON-CONSUMPTIVE`, POWER_DEMAND_ZEROED,
+                     ASSIGNED_PRIORITY_DATE_SUB, ASSIGNED_PRIORITY_DATE_SOURCE,
+                     PRE_1914, RIPARIAN, APPROPRIATIVE, FACE_VALUE_AMOUNT_AF,
+                     INI_REPORTED_DIV_AMOUNT_AF, NULL_DEMAND, PERCENT_FACE,
+                     ZERO_DEMAND, ORIGINAL_APPLICATION_NUMBER, BASIN),
+            paste0("OutputData/", ws$ID, "_MDT.csv"))
   
   
   
-  write_xlsx(list("PODs" = assignedDF %>% st_drop_geometry()),
+  write_xlsx(list("TD_PODs" = assignedDF %>% 
+                    st_drop_geometry() %>%
+                    select(APPLICATION_NUMBER, POD_ID,
+                           LATITUDE, LONGITUDE, HUC12,
+                           HUC12_NAME, NHD_CAT)),
              paste0("OutputData/", ws$ID, "_PODs.xlsx"))
   
   
@@ -498,9 +518,11 @@ generateGPKG <- function (ws, wsBound, assignedDF, huc12, catchDF, mdtDF) {
   # (It's usually called "COMID")
   fieldName <- if_else("COMID" %in% names(flowLines),
                        "COMID",
-                       ws$SUBBASIN_FIELD_ID_NAMES %>%
-                         str_split(";") %>% unlist() %>%
-                         trimws() %>% head(1))
+                       if_else("reachcode" %in% names(flowLines),
+                               "reachcode",
+                               ws$SUBBASIN_FIELD_ID_NAMES %>%
+                                 str_split(";") %>% unlist() %>%
+                                 trimws() %>% head(1)))
   
     
   
