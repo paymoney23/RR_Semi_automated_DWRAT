@@ -1,7 +1,7 @@
 #----PURPOSE: ----
 # This script restructures and manipulates the output inq.csv (simulated hydrological flows
 # for basins 1-22 of the Russian River watershed) produced by the PRMS model. 
-# It generates the PRMS precursor to Raw_Flows.csv, the supply input of DWRAT
+# It generates the PRMS precursor to Raw_Flows.csv, the supply input of DWRAT.
 
  # (1) Adds headers to the output for Date and the 22 basins
  # (2) Whittles the dataset to the hydrological month of interest
