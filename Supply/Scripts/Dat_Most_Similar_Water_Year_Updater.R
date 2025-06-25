@@ -720,4 +720,4 @@ changeScriptValue <- function (filePath, similarYear) {
 #### Script Execution ####
 
 
-#mainProcedure()
+mainProcedure()

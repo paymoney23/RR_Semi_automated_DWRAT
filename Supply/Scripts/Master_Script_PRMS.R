@@ -89,6 +89,20 @@ source(here("Scripts/CIMIS_API_Scraper.R"))
 source(here("Scripts/Dat_PRMS.R"))
 
 
+
+# NOTE: If this is the first model run with 'EndDate' >= March 1st, 
+#       additional steps are required!
+
+# [1] Run through PRMS and generate a new "rr_budget.out2" file
+
+# [2] Then run this script:
+# source("Scripts/Dat_Most_Similar_Water_Year_Updater.R")
+
+# [3] Update "Dat_PRMS.R" and "Dat_SRP.R" if it isn't automatically performed by the above script
+
+# [4] After that, run through "Dat_PRMS.R" and the rest of the PRMS process again
+
+
 # generate SRP model input ------------------------------------------------
 #source(here("Scripts/CNRFC_SRP_Processor.R")) #Formats already downloaded CNRFC forecast data for SRP
 source(here("Scripts/PRISM_SRP_Processor.R")) #Formats already downloaded PRISM observed data for SRP
