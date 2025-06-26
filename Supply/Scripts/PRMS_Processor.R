@@ -1,4 +1,5 @@
 #----PURPOSE: ----
+
 # This script restructures and manipulates the output inq.csv (simulated hydrological flows
 # for basins 1-22 of the Russian River watershed) produced by the PRMS model. 
 # It generates the PRMS precursor to Raw_Flows.csv, the supply input of DWRAT.
@@ -12,7 +13,7 @@
 
 
 #Last Updated By: Payman Alemi
-#Last Updated On: 2/6/2024
+#Last Updated On: 6/26/2025
 
 #Load libraries----
 require(tidyverse) #required for %>% operator
