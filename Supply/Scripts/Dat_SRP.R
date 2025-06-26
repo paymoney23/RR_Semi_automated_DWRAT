@@ -6,7 +6,7 @@
 # it has a commented out section that performs QAQC checks for absurd temperature and precipitation
 # values. 
 
-# Last Updated by: Payman Alemin on 6/26/2026
+# Last Updated by: Payman Alemi on 6/26/2026
 
 # Start timer
 start_time <- Sys.time()
