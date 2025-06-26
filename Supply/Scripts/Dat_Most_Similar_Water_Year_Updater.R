@@ -1,3 +1,6 @@
+#----PURPOSE:----
+# Last Updated by: Aakash Prashar on 6/26/2025
+
 # Use this script before the April DWRAT run every year
 # Input the path to the March PRMS run's "rr_budget.out2" file
 # This script will identify the most similar water year using our linear regression model
