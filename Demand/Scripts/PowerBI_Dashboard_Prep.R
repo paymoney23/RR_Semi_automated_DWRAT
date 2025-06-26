@@ -20,8 +20,11 @@ mainProcedure <- function () {
   #   (4) "[ID]_AppID_List.xlsx" (a spreadsheet with just application numbers)
   #   (5) "[ID]_PODs.xlsx" (a spreadsheet with geographic coordinates, sub-basin assignments, and HUC-12 assignments)
   
+  # It will also generate a geopackage file with layers useful for the dashboard
   
   
+  
+  # Get the watershed and demand dataset range
   source("Scripts/Watershed_Selection.R")
   source("Scripts/Dataset_Year_Range.R")
   
@@ -340,27 +343,47 @@ mainProcedure <- function () {
   
   
   # Create output files
-  write_xlsx(list("Monthly_Demand" = monthlyDF),
-             paste0("OutputData/", ws$ID, "_Monthly_Demand.xlsx"))
+  write_csv(monthlyDF %>%
+              select(APPLICATION_NUMBER, YEAR, MONTH, TYPE, DIVERSION),
+            paste0("OutputData/", ws$ID, "_Monthly_Demand.csv"))
   
   
   
-  write_xlsx(list("DWRAT_Allocations" = allocationsDF),
+  write_xlsx(list("Sheet1" = allocationsDF %>%
+                    select(APPLICATION_NUMBER, ALLOCATIONS,
+                           Curtailment, DEMAND, `SHORTAGE %`,
+                           BASIN, PRIORITY, Month) %>%
+                    rename(`Application ID` = APPLICATION_NUMBER)),
              paste0("OutputData/", ws$ID, "_DWRAT_Allocations.xlsx"))
   
   
   
-  write_xlsx(list("AppID_List" = appDF),
+  write_xlsx(list("Sheet1" = appDF %>%
+                    select(APPLICATION_NUMBER)),
              paste0("OutputData/", ws$ID, "_AppID_List.xlsx"))
   
   
   
-  write_xlsx(list("MDT" = mdtDF),
-             paste0("OutputData/", ws$ID, "_MDT.xlsx"))
+  write_csv(mdtDF %>%
+              mutate(BASIN = ASSIGNED_NHD_CAT) %>%
+              select(APPLICATION_NUMBER, all_of(contains("_MEAN_DIV")), 
+                     TOTAL_EXPECTED_ANNUAL_DIVERSION, TOTAL_MAY_SEPT_DIV,
+                     WATER_RIGHT_TYPE, WATER_RIGHT_STATUS, PRIMARY_OWNER_TYPE,
+                     APPLICATION_PRIMARY_OWNER, SOURCE_NAME, TRIB_DESC, WATERSHED,
+                     PRIMARY_USE, `FULLY NON-CONSUMPTIVE`, POWER_DEMAND_ZEROED,
+                     ASSIGNED_PRIORITY_DATE_SUB, ASSIGNED_PRIORITY_DATE_SOURCE,
+                     PRE_1914, RIPARIAN, APPROPRIATIVE, FACE_VALUE_AMOUNT_AF,
+                     INI_REPORTED_DIV_AMOUNT_AF, NULL_DEMAND, PERCENT_FACE,
+                     ZERO_DEMAND, ORIGINAL_APPLICATION_NUMBER, BASIN),
+            paste0("OutputData/", ws$ID, "_MDT.csv"))
   
   
   
-  write_xlsx(list("PODs" = assignedDF %>% st_drop_geometry()),
+  write_xlsx(list("TD_PODs" = assignedDF %>% 
+                    st_drop_geometry() %>%
+                    select(APPLICATION_NUMBER, POD_ID,
+                           LATITUDE, LONGITUDE, HUC12,
+                           HUC12_NAME, NHD_CAT)),
              paste0("OutputData/", ws$ID, "_PODs.xlsx"))
   
   
@@ -472,7 +495,8 @@ generateGPKG <- function (ws, wsBound, assignedDF, huc12, catchDF, mdtDF) {
   # (3) HUC-12 sub-basins ('huc12')
   # (4) Hydrologic Model NHD Catchments ('catchDF')
   # (5) Hydrologic Model NHD Flowlines (need to read in - watershed-specific!!!)
-  
+  # (6) Watershed Mask
+
   
   
   # Read in NHD Flowlines
@@ -494,9 +518,11 @@ generateGPKG <- function (ws, wsBound, assignedDF, huc12, catchDF, mdtDF) {
   # (It's usually called "COMID")
   fieldName <- if_else("COMID" %in% names(flowLines),
                        "COMID",
-                       ws$SUBBASIN_FIELD_ID_NAMES %>%
-                         str_split(";") %>% unlist() %>%
-                         trimws() %>% head(1))
+                       if_else("reachcode" %in% names(flowLines),
+                               "reachcode",
+                               ws$SUBBASIN_FIELD_ID_NAMES %>%
+                                 str_split(";") %>% unlist() %>%
+                                 trimws() %>% head(1)))
   
     
   
@@ -509,7 +535,37 @@ generateGPKG <- function (ws, wsBound, assignedDF, huc12, catchDF, mdtDF) {
   
   
   
-  # Write these layers to a file
+  # Prepare the watershed mask layer next
+  # Use 'wsBound' and a generic rectangle that covers California to create a mask layer
+  # (The mask layer will be the rectangle with the watershed's polygon subtracted out)
+  
+  
+  
+  # Create the generic rectangle layer
+  universalMask <- c(-131.8766, 50.95556, 
+                     -105.8087, 50.89833, 
+                     -105.8659, 24.83043, 
+                     -131.9338, 24.88766, 
+                     -131.8766, 50.95556) %>%
+    matrix(ncol = 2, byrow = TRUE) %>%
+    data.frame() %>%
+    st_as_sf(coords = 1:2, crs = "epsg:4269") %>%
+    summarize(geometry = st_combine(geometry)) %>% 
+    st_cast("POLYGON") %>%
+    st_transform(st_crs(wsBound))
+  
+  
+  
+  # Create the mask layer for the watershed
+  # (The mask layer will contain no fields except for "geometry" and an ID column)
+  wsMask <- st_difference(universalMask, wsBound) %>%
+    select(geometry) %>%
+    mutate(FEATUREID = 1) %>%
+    select(FEATUREID, geometry)
+  
+  
+  
+  # Write all of these layers to a file
   st_write(wsBound,
            paste0("OutputData/", ws$ID, "_GIS_Layers.gpkg"), 
            layer = "Watershed_Boundary",
@@ -560,6 +616,13 @@ generateGPKG <- function (ws, wsBound, assignedDF, huc12, catchDF, mdtDF) {
   st_write(flowLines,
            paste0("OutputData/", ws$ID, "_GIS_Layers.gpkg"),
            layer = "Hydro_Model_NHD_Flowlines",
+           append = FALSE)
+  
+  
+  
+  st_write(wsMask,
+           paste0("OutputData/", ws$ID, "_GIS_Layers.gpkg"),
+           layer = "Watershed_Mask",
            append = FALSE)
   
   
