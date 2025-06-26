@@ -11,7 +11,6 @@
 
 remove(list = ls())
 
-
 require(tidyverse)
 require(rstudioapi)
 require(writexl)
