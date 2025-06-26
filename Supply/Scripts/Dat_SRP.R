@@ -1,8 +1,13 @@
-# Save the SRP_Dat file for a specific month to the ProcessedData folder with a timestamp. The timestamp is the EndDate;
-# EndDate is the last day of the observed data range. 
+#----PURPOSE----
 
+# Generates the Dat file ("Dat SRP file") that serves as the input for the SRP GS flow
+# model by aggregating the observed meteorological data for the CIMIS 83 and CIMIS 103
+# stations and incorporating SPI, similar water year, or PRISM data s needed. Additionally,
+# it has a commented out section that performs QAQC checks for absurd temperature and precipitation
+# values. 
 
-# Start Timer
+# Last Updated by: Payman Alemin on 6/26/2026
+
 # Start timer
 start_time <- Sys.time()
 

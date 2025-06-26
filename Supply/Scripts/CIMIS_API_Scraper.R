@@ -1,5 +1,8 @@
-# This script is intended to replace "CIMIS_Scraper.R" 
+#----PURPOSE----
+# Scrapes temperature and precipitation data from CIMIS weather stations in the 
+# Upper Russian River via API. Superseded the CIMIS_Selenium_Scraper.R
 
+# Last Updated by: Payman Alemi on 6/26/2025
 
 #### Dependencies ####
 
