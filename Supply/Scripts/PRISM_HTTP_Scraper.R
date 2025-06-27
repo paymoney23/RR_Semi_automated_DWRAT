@@ -9,7 +9,6 @@
 
 #### Dependencies ####
 
-
 require(tidyverse)
 require(httr)
 
