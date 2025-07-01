@@ -142,6 +142,12 @@ mainProcedure <- function () {
   
   
   
+  # Clip the extent of the HUC12 boundaries to the watershed boundaries
+  huc12 <- huc12 %>%
+    st_intersection(wsBound)
+  
+  
+  
   # Assign a HUC12 basin to 'mdtDF'
   mdtDF <- mdtDF %>%
     group_by(APPLICATION_NUMBER) %>%
