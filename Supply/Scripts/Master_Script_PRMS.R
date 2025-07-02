@@ -1,4 +1,12 @@
-#install.packages ("tinytex")
+#----PURPOSE:----
+# This master script runs the processing and scraping scripts in order to generate the
+# PRMS and SRP dat files. After both the PRMS and SRP models are run, the remaining scripts
+# process the model outputs to generate a single supply dataset, Raw_Flows.csv, which
+# serves as an input for DWRAT. 
+
+# Last Updated: By Payman Alemi on 6/26/2025
+
+# #install.packages ("tinytex")
 # load packages -----------------------------------------------------------
 library(tidyverse)
 library(RSelenium)
@@ -9,11 +17,12 @@ library(tinytex)
 require(rvest)
 require(httr)
 require(writexl)
-#
-# RUNS SCRAPING & PROCESSING SCRIPTS IN ORDER TO GENERATE FINAL DAT FILE
+require(openxlsx)
+
 
 # Include forecasted data from CNRFC in the datasets? ----
 # (This should be either "TRUE" or "FALSE")
+
 includeForecast <- FALSE
 
 # Include flagging and remediation blocks in Dat_PRMS.R? 
@@ -44,7 +53,9 @@ StartDate <- data.frame(date = StartDate, day = StartDay, month = StartMonth, ye
 print(StartDate)
 
 ## set end date----
-EndDate <- as.Date("2025-02-24")# set to desired end date for observed meteorological data range
+
+EndDate <- as.Date("2025-04-30")# set to desired end date for observed meteorological data range
+
 EndDay <- day(EndDate) 
 EndMonth <- month(EndDate)
 EndYear <- year(EndDate)
@@ -63,7 +74,7 @@ modeler_name = "PHoupt" # has to be altered manually
 
 # generate PRMS model input -----------------------------------------------
 source(here("Scripts/PRISM_HTTP_Scraper.R")) #downloads PRISM climate data for both PRMS and SRP stations simultaneously
-source(here("Scripts/PRISM_Processor.R"))
+source(here("Scripts/PRISM_PRMS_Processor.R"))
 print(Prism_Processed)
 source(here("Scripts/NOAA_API_Scraper.R"))
 #source(here("Scripts/CNRFC_API_Scraper.R")) #downloads CNRFC data for both PRMS and SRP stations simultaneously
@@ -82,8 +93,21 @@ source(here("Scripts/CIMIS_API_Scraper.R"))
 
 # Generate PRMS Dat File
 source(here("Scripts/Dat_PRMS.R"))
-print("Running the Water Sharing Program version of 'DAT_PRMS.R'")
-source(here("Scripts/Dat_PRMS_WSP_(For_Prior_WYs).R"))
+
+
+
+
+# NOTE: If this is the first model run with 'EndDate' >= March 1st, 
+#       additional steps are required!
+
+# [1] Run through PRMS and generate a new "rr_budget.out2" file
+
+# [2] Then run this script:
+# source("Scripts/Dat_Most_Similar_Water_Year_Updater.R")
+
+# [3] Update "Dat_PRMS.R" and "Dat_SRP.R" if it isn't automatically performed by the above script
+
+# [4] After that, run through "Dat_PRMS.R" and the rest of the PRMS process again
 
 
 # generate SRP model input ------------------------------------------------
