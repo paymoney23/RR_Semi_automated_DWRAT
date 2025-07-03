@@ -710,7 +710,7 @@ generateMetadata <- function (ws) {
                       "\"https://gispublic.waterboards.ca.gov/portal/home/content.html#my\" ",
                       "target = \"_blank\">",
                       "Link to Portal Content",
-                      "<a>"),
+                      "</a>"),
                # Title
                "<h2>Title</h2>",
                paste0("<p>", paste0(ws$NAME, " Watershed GIS Layers"), "</p>"),
