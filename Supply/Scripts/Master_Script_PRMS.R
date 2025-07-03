@@ -54,7 +54,7 @@ print(StartDate)
 
 ## set end date----
 
-EndDate <- as.Date("2025-04-30")# set to desired end date for observed meteorological data range
+EndDate <- as.Date("2025-06-30")# set to desired end date for observed meteorological data range
 
 EndDay <- day(EndDate) 
 EndMonth <- month(EndDate)
@@ -125,4 +125,4 @@ source(here("Scripts/PRMS_Processor.R"))
 
 
 # SRP Post-Processing Script
-source(here("Scripts/SRP_Post_Processing.R"))
+source(here("Scripts/SRP_Processor.R"))
