@@ -362,12 +362,40 @@ Dat_SRP_Final$Concatenated_Column <- do.call(paste, c(concatenated_columns, sep 
 Dat_SRP_Final = Dat_SRP_Final[, "Concatenated_Column"] %>% as.data.frame()
 names(Dat_SRP_Final) = "Dat_SRP_Final"
 
-# Combine Dat_SRP_Final with Dat_SRP_Heading
-Dat_SRP_Heading = read.csv(file = paste0(SRP_Blueprints_Path, "Dat_SRP_Heading.dat"),
-                           header = F)
 
-#Unite all the columns in Dat_SRP_Heading into a single column
-Dat_SRP_Heading = unite(Dat_SRP_Heading, Concatenated_Column, V1, V2, V3, sep = "")
+# Add the Dat_SRP_Heading information
+comment_lines <- c(
+  "generated in Excel : 1947-1980 USGS daily grid, 1981-2018 PRISM daily interp station, Author: Pascual Benito (pbenito@elmontgomery.com)",
+  "precip 2",
+  "tmax 2",
+  "tmin 2"
+)
+
+# Variable-label line (right-aligned to mimic fixed-width layout)
+vars <- c("year","month","day","hour","min","sec",
+          "precip01","precip02",
+          "tmax01","tmax02",
+          "tmin01","tmin02")
+
+# same widths you used later (see spacing_vector)
+widths <- c(18, 12, 12, 12, 11, 13, rep(13, 6))
+
+label_line <- str_c(
+  "###################",              # leading hash block
+  str_pad(vars, widths, side = "left"),
+  collapse = ""
+)
+
+Dat_SRP_Heading <- tibble(
+  Dat_SRP_Final = c(comment_lines, label_line)
+)
+
+# # Combine Dat_SRP_Final with Dat_SRP_Heading
+# Dat_SRP_Heading = read.csv(file = paste0(SRP_Blueprints_Path, "Dat_SRP_Heading.dat"),
+#                            header = F)
+# 
+# #Unite all the columns in Dat_SRP_Heading into a single column
+# Dat_SRP_Heading = unite(Dat_SRP_Heading, Concatenated_Column, V1, V2, V3, sep = "")
 
 # Rename the single column in Dat_SRP_Heading to "Dat_SRP_Final"
 names(Dat_SRP_Heading) = "Dat_SRP_Final"

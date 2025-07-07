@@ -1,5 +1,6 @@
 #----PURPOSE----
-# Scrapes temperature and precipitation data from CIMIS weather stations in the 
+# Scrapes temperature data in degrees Celsius and precipitation data in millimeters (mm)
+# from CIMIS weather stations in the 
 # Upper Russian River via API. Superseded the CIMIS_Selenium_Scraper.R
 
 # Last Updated by: Payman Alemi on 6/26/2025
@@ -550,7 +551,7 @@ apiBasedCall <- function (StartDate, EndDate) {
 #### Script Execution ####
 
 
-cat("Starting 'CIMIS_Static_Scraper.R'...")
+cat("Starting 'CIMIS_API_Scraper.R'...")
 
 
 mainProcedure(StartDate, EndDate, includeForecast)
