@@ -53,7 +53,9 @@ StartDate <- data.frame(date = StartDate, day = StartDay, month = StartMonth, ye
 print(StartDate)
 
 ## set end date----
-EndDate <- as.Date("2025-04-30")# set to desired end date for observed meteorological data range
+
+EndDate <- as.Date("2025-06-30")# set to desired end date for observed meteorological data range
+
 EndDay <- day(EndDate) 
 EndMonth <- month(EndDate)
 EndYear <- year(EndDate)
@@ -68,7 +70,7 @@ Hydro_EndDate = as.Date("2025-09-30", format = "%Y-%m-%d") #serves as the end da
   # usually the last day of the next month
 
 #Define the modeler_name variable-this is the first initial and last name of the modeler
-modeler_name = "PAlemi" # has to be altered manually
+modeler_name = "PHoupt" # has to be altered manually
 
 # generate PRMS model input -----------------------------------------------
 source(here("Scripts/PRISM_HTTP_Scraper.R")) #downloads PRISM climate data for both PRMS and SRP stations simultaneously
@@ -91,6 +93,7 @@ source(here("Scripts/CIMIS_API_Scraper.R"))
 
 # Generate PRMS Dat File
 source(here("Scripts/Dat_PRMS.R"))
+
 
 
 
@@ -122,4 +125,4 @@ source(here("Scripts/PRMS_Processor.R"))
 
 
 # SRP Post-Processing Script
-source(here("Scripts/SRP_Post_Processing.R"))
+source(here("Scripts/SRP_Processor.R"))
