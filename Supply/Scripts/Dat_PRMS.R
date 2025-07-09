@@ -1,4 +1,14 @@
-#Install and load libraries----
+#----PURPOSE----
+
+# Generates the Dat (Dat_PRMS.dat) file that serves as the input for the PRMS model
+# by aggregating the observed meteorological data from all the stations in subbasins
+# 1-22 of the Russian River watershed and incorporating SPI, similar water year, 
+# or PRISM data as needed. Additionally, this script has a commented out section, that can
+# QAQC for absurd temperature and precipitation values.
+
+# Last Updated by: Payman Alemi on 6/26/2025
+
+# Install and load libraries----
 
 # Start timer
 start_time <- Sys.time()
