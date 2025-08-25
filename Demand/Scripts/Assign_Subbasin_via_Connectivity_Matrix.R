@@ -412,9 +412,26 @@ splitWaterRight <- function (podTable, appNum, subsetConn, colName,
   
   
   # Read in the flow spreadsheet
-  flowDF <- read_xlsx(paste0("OutputData/", ws$ID, "_",
-                             yearRange[1], "_", yearRange[2],
-                             "_Monthly_Diversions.xlsx"))
+  if (!is.na(ws$EXCLUDED_REPORTING_YEARS)) {
+    
+    flowDF <- read_xlsx(paste0("OutputData/", ws$ID, "_",
+                               yearRange[1], "_", yearRange[2],
+                               "_Monthly_Diversions",
+                               "_Excluded_",
+                               ws$EXCLUDED_REPORTING_YEARS %>%
+                                 str_split(";") %>% unlist() %>%
+                                 trimws() %>% 
+                                 as.numeric() %>% sort() %>% unique() %>%
+                                 paste0(collapse = "_"),
+                               ".xlsx"))
+    
+  } else {
+    
+    flowDF <- read_xlsx(paste0("OutputData/", ws$ID, "_",
+                               yearRange[1], "_", yearRange[2],
+                               "_Monthly_Diversions.xlsx"))
+    
+  }
   
   
   
@@ -529,10 +546,28 @@ splitWaterRight <- function (podTable, appNum, subsetConn, colName,
   
   
   # Then overwrite flowDF's file with these updates
-  flowDF %>%
-    write_xlsx(paste0("OutputData/", ws$ID, "_",
-                      yearRange[1], "_", yearRange[2],
-                      "_Monthly_Diversions.xlsx"))
+  if (!is.na(ws$EXCLUDED_REPORTING_YEARS)) {
+    
+    flowDF %>%
+      write_xlsx(paste0("OutputData/", ws$ID, "_",
+                        yearRange[1], "_", yearRange[2],
+                        "_Monthly_Diversions",
+                        "_Excluded_",
+                        ws$EXCLUDED_REPORTING_YEARS %>%
+                          str_split(";") %>% unlist() %>%
+                          trimws() %>% 
+                          as.numeric() %>% sort() %>% unique() %>%
+                          paste0(collapse = "_"),
+                        ".xlsx"))
+    
+  } else {
+    
+    flowDF %>%
+      write_xlsx(paste0("OutputData/", ws$ID, "_",
+                        yearRange[1], "_", yearRange[2],
+                        "_Monthly_Diversions.xlsx"))
+    
+  }
   
   
   

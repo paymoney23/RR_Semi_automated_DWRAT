@@ -41,6 +41,14 @@ mainProcedure <- function () {
                                        yearRange[1], "_", yearRange[2], 
                                        "_MDT_"), 
                       full.names = "TRUE") %>%
+    str_subset(if_else(is.na(ws$EXCLUDED_REPORTING_YEARS),
+                       "_MDT_",
+                       paste0("_Excluded_",
+                              ws$EXCLUDED_REPORTING_YEARS %>%
+                                str_split(";") %>% unlist() %>%
+                                trimws() %>% 
+                                as.numeric() %>% sort() %>% unique() %>%
+                                paste0(collapse = "_")))) %>%
     sort() %>% tail(1) %>%
     read_csv()
   
@@ -48,7 +56,16 @@ mainProcedure <- function () {
   
   # "DemandDataset_MonthlyValues" CSV
   monthlyDF <- paste0("OutputData/", ws$ID, "_", yearRange[1], "_", yearRange[2], 
-                      "_DemandDataset_MonthlyValues.csv") %>%
+                      "_DemandDataset_MonthlyValues",
+                      if_else(is.na(ws$EXCLUDED_REPORTING_YEARS),
+                              "",
+                              paste0("_Excluded_",
+                                     ws$EXCLUDED_REPORTING_YEARS %>%
+                                       str_split(";") %>% unlist() %>%
+                                       trimws() %>% 
+                                       as.numeric() %>% sort() %>% unique() %>%
+                                       paste0(collapse = "_"))),
+                      ".csv") %>%
     read_csv()
   
   
