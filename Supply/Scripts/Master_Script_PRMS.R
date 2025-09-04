@@ -30,8 +30,8 @@ includeForecast <- FALSE
 # that the flagging and remediation code blocks in the Dat_PRMS.R script will be executed. FALSE
 # means that those blocks will be skipped;
 
-includeFlagging <- TRUE
-includeRemediation <- TRUE
+includeFlagging <- FALSE
+includeRemediation <- FALSE
 
 # set start and end dates -------------------------------------------------
 ## Set start dates----
@@ -54,7 +54,7 @@ print(StartDate)
 
 ## set end date----
 
-EndDate <- as.Date("2025-06-30")# set to desired end date for observed meteorological data range
+EndDate <- as.Date("2025-07-31")# set to desired end date for observed meteorological data range
 
 EndDay <- day(EndDate) 
 EndMonth <- month(EndDate)
@@ -70,7 +70,7 @@ Hydro_EndDate = as.Date("2025-09-30", format = "%Y-%m-%d") #serves as the end da
   # usually the last day of the next month
 
 #Define the modeler_name variable-this is the first initial and last name of the modeler
-modeler_name = "PHoupt" # has to be altered manually
+modeler_name = "PAlemi" # has to be altered manually
 
 # generate PRMS model input -----------------------------------------------
 source(here("Scripts/PRISM_HTTP_Scraper.R")) #downloads PRISM climate data for both PRMS and SRP stations simultaneously

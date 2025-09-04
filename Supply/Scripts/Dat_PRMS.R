@@ -820,6 +820,12 @@ write.table(DAT_Merged_Tab,
             paste0("ProcessedData/Dat_PRMS_", modeler_name, "_Observed_EndDate_", EndDate$date, ".dat"),
             sep = "\t", col.names = FALSE, row.names = FALSE, quote = FALSE)
 
+# Copy and paste DAT PRMS folder to the C:\RR_PRMS\PRMS\input\climate_scenarios folder
+write.table(DAT_Merged_Tab, 
+            paste0("C:/RR_PRMS/PRMS/input/climate_scenarios/Dat_PRMS_", modeler_name,"_Observed_EndDate_", EndDate$date, ".dat"),
+            sep = "\t", col.names =  FALSE, row.names = FALSE, quote = FALSE)
+
+# Update the input and filename references in the PRMS control file
 
 
 # Remove variables from the environment
