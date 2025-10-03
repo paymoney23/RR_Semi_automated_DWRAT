@@ -32,7 +32,7 @@ mainProcedure <- function (StartDate, EndDate, includeForecast) {
   
   #Replace all missing values with -999
   combinedDF[combinedDF == ""] = -999
-  
+  combinedDF[is.na(combinedDF)] <- -999
   
   
   # The next steps rely on the outputs of 
