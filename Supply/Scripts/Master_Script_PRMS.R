@@ -4,7 +4,7 @@
 # process the model outputs to generate a single supply dataset, Raw_Flows.csv, which
 # serves as an input for DWRAT. 
 
-# Last Updated: By Payman Alemi on 6/26/2025
+# Last Updated: By Payman Alemi on 10/2/2025
 
 # #install.packages ("tinytex")
 # load packages -----------------------------------------------------------
@@ -54,7 +54,7 @@ print(StartDate)
 
 ## set end date----
 
-EndDate <- as.Date("2025-07-31")# set to desired end date for observed meteorological data range
+EndDate <- as.Date("2025-09-30")# set to desired end date for observed meteorological data range
 
 EndDay <- day(EndDate) 
 EndMonth <- month(EndDate)
