@@ -6,7 +6,7 @@
 # or PRISM data as needed. Additionally, this script has a commented out section, that can
 # QAQC for absurd temperature and precipitation values.
 
-# Last Updated by: Payman Alemi on 6/26/2025
+# Last Updated by: Payman Alemi on 10/3/2025
 
 # Install and load libraries----
 
@@ -67,7 +67,7 @@ DAT_Predictions <- makeSharePointPath("DWRAT\\SDU_Runs\\Hydrology\\DAT PRMS Blue
 
 
 # Read in the DAT file that contains data from 1990 up to the current water year
-DAT_Initial <- makeSharePointPath("DWRAT\\SDU_Runs\\Hydrology\\DAT PRMS Blueprints\\Dat_PRMS_1990_to_WY2024.dat") %>%
+DAT_Initial <- makeSharePointPath("DWRAT\\SDU_Runs\\Hydrology\\DAT PRMS Blueprints\\Dat_PRMS_1990_to_WY2025.dat") %>%
   read_delim("\t", col_names = FALSE, show_col_types = FALSE) %>%
   set_names(DAT_Headers)
 
