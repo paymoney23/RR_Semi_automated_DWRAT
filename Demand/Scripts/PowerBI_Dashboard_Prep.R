@@ -432,7 +432,8 @@ mainProcedure <- function () {
   
   write_xlsx(list("Out_Cat" = outletDF %>%
                     st_drop_geometry() %>%
-                    select(NHD_CAT, HUC12, HUC12_NAME, NHD_OUTLET, HUC12_OUTLET)),
+                    select(NHD_CAT, HUC12, HUC12_NAME, NHD_OUTLET, HUC12_OUTLET,
+                           NHD_DOWNSTREAM, HUC12_DOWNSTREAM)),
              paste0("OutputData/", ws$ID, "_Catchments.xlsx"))
   
   
@@ -540,14 +541,17 @@ verticalizeData <- function (inputDF) {
 findOutlets <- function (catchDF, connMat) {
   
   # Find the outlet catchment for each catchment
-  # Note the catchment and its corresponding HUC-12 subbasin
+  # Note that outlet catchment and its corresponding HUC-12 subbasin
+  # Also prepare a string of every downstream catchment and downstream HUC-12 subbasin
   
   
   
   # Create new columns in 'catchDF' to identify the outlet catchment and HUC-12 IDs
   outletDF <- catchDF %>%
     mutate(NHD_OUTLET = NA_real_,
-           HUC12_OUTLET = NA_real_)
+           HUC12_OUTLET = NA_real_,
+           NHD_DOWNSTREAM = NA_character_,
+           HUC12_DOWNSTREAM = NA_character_)
   
   
   
@@ -597,6 +601,19 @@ findOutlets <- function (catchDF, connMat) {
     # Update 'outletDF' accordingly
     outletDF$NHD_OUTLET[i] <- outCatch
     outletDF$HUC12_OUTLET[i] <- outletDF$HUC12[outletDF$NHD_CAT == outCatch]
+    
+    
+    
+    # Also get the HUC-12 subbasins of each of the catchments in 'nonzeroCols'
+    nonzeroCols_HUC <- nonzeroCols %>%
+      map(~ outletDF$HUC12[outletDF$NHD_CAT == .]) %>%
+      unlist()
+    
+    
+    
+    # Input 'nonzeroCols' and 'nonzeroCols_HUC' as comma-separated strings into 'outletDF'
+    outletDF$NHD_DOWNSTREAM[i] <- paste0("\"", nonzeroCols, "\"", collapse = ",")
+    outletDF$HUC12_DOWNSTREAM[i] <- paste0("\"", nonzeroCols_HUC, "\"", collapse = ",")
     
   }
   
