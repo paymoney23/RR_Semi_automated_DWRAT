@@ -115,6 +115,8 @@ lastCatch <- huc12 %>%
 
 # Get the outlet catchment for each HUC-12 subbasin
 # (It should be the catchment that all other catchments in the subbasin drain to)
+# (For a watershed with coastal catchments that do not drain through the main outlet,
+#  this may not be the case)
 for (i in 1:nrow(lastCatch)) {
   
   subConn <- connMat %>%
@@ -129,6 +131,64 @@ for (i in 1:nrow(lastCatch)) {
   
   
   maxIndex <- which(colSums(subConn[, -1]) == nrow(subConn))
+  
+  
+  
+  if (length(maxIndex) == 0) {
+    
+    cat(paste0("\n\n\n", huc12$huc12[i], " (", huc12$name[i], ") does not have ",
+               "a single clear outlet catchment!\n"))
+    
+    cat(paste0("\n\nChoosing one with a greater total drainage area (including ",
+               "upstream connected catchments in that calculation)\n"))
+    
+    
+    
+    # In that case, take the catchment with the greater total drainage area
+    # (Include upstream catchments in this calculation)
+    areaDF <- subWS %>%
+      select(BASIN) %>%
+      mutate(AREA = st_area(subWS) %>% as.numeric(),
+             UPSTREAM_TOTAL = NA_real_)
+    
+    
+    
+    # For each catchment, calculate the total upstream drainage area
+    for (j in 1:nrow(subConn)) {
+      
+      # Get all upstream catchments from the current iteration's basin
+      # Those would be the non-zero rows in the column of the current iteration's catchment
+      # Then, sum up their area values
+      # (Note: Because all catchments drain into themselves in the connectivity matrix,
+      #  the current iteration's catchment is automatically included in this area calculation.
+      #  It's already in 'upstreamCatch' because it will have a '1' for its own column.)
+      upstreamCatch <- connMat$BASIN[which(connMat[, which(names(connMat) == subConn$BASIN[j])] > 0)]
+      totalArea <- sum(areaDF$AREA[areaDF$BASIN %in% upstreamCatch])
+      
+      
+      areaDF$UPSTREAM_TOTAL[areaDF$BASIN == subConn$BASIN[j]] <- totalArea
+      
+    }
+    
+    
+    
+    # Get the catchment with the greatest total upstream drainage area
+    maxCatch <- areaDF %>%
+      filter(!is.na(UPSTREAM_TOTAL)) %>%
+      filter(UPSTREAM_TOTAL == max(UPSTREAM_TOTAL)) %>%
+      st_drop_geometry() %>%
+      select(BASIN) %>% unlist(use.names = FALSE)
+    
+    
+    
+    stopifnot(length(maxCatch) == 1)
+    
+    
+    
+    # Use 'maxCatch' to set the value of 'maxIndex'
+    maxIndex <- which(names(subConn)[-1] == maxCatch)
+    
+  }
   
   
   
@@ -201,8 +261,15 @@ for (i in 1:nrow(flowsTo)) {
 
 
 
-# Only the most downstream basin should have "NA" in "FLOWS_TO"
-stopifnot(sum(is.na(flowsTo$FLOWS_TO)) == 1)
+# Only the most downstream basin(s) should have "NA" in "FLOWS_TO"
+# There are two allowable cases:
+# (1) Only one HUC-12 subbasin has no downstream basin (normal case for watersheds with one outlet)
+# (2) If a watershed has multiple outlets (coastal catchments), it would have needed the alternative
+#     procedure to identify its last catchments (meaning that the variable 'maxCatch' would have been created)
+#     Only allow there to be multiple 'NA' values for "FLOWS_TO" if the presence of coastal catchments 
+#     was already confirmed in the dataset
+stopifnot(sum(is.na(flowsTo$FLOWS_TO)) == 1 ||
+            (sum(is.na(flowsTo$FLOWS_TO)) > 1 && exists("maxCatch")))
 
 
 
