@@ -22,7 +22,8 @@ Demand/OutputData/*.geoJSON
 Demand/OutputData/*.gpkg
 
 #IGNORE PARADIGM_DWRAT FILES
-Paradigm_DWRAT/dwrat/output/*
+Paradigm_DWRAT/dwrat/output/*.csv
+Paradigm_DWRAT/dwrat/output/*.log
 
 
 #Ignore Various R files
