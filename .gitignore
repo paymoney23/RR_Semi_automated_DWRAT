@@ -29,6 +29,8 @@ Paradigm_DWRAT/dwrat/output/*.log
 
 #IGNORE LSPC FILES
 LSPC/*.log
+LSPC/**/*.csv
+LSPC/**/*.out
 
 #Ignore Various R files
 .Rproj.user
