@@ -27,6 +27,8 @@ Demand/OutputData/*.html
 Paradigm_DWRAT/dwrat/output/*.csv
 Paradigm_DWRAT/dwrat/output/*.log
 
+#IGNORE LSPC FILES
+LSPC/*.log
 
 #Ignore Various R files
 .Rproj.user
