@@ -17,7 +17,7 @@ c       There must be no comment line in between the data lines
 c       The input text field must be a continuous string without any space in between the characters
 c-----------------------------------------------------------------------------------------
 c LSPC MODEL INPUT FILE
-c This input file was created at 01:28:55pm on 10/20/2025
+c This input file was created at 02:01:54pm on 10/20/2025
 c-----------------------------------------------------------------------------------------
 c0   general control
 c 
@@ -440,12 +440,11 @@ c                 if = 0 no output
 c                 if = 1 timeseries output
 c
 c	Standard	Snow	Hydrology	Sediment	GQUAL	RQUAL	Custom	Landuse	Stream	WaterBudget	PointSource	Threshold	SUSTAIN	BASEFLOW	BANKEROSION	AquiferConc	RQualLink	RQualHRUts	QLOSS
-	0	0	0	0	0	0	1	0	3	0	0	0	0	0	0	0	0	0	0
+	0	0	0	0	0	0	0	0	3	0	0	0	0	0	0	0	0	0	0
 c-----------------------------------------------------------------------------------------
 c46  user specified output parameter list
 c
 c	PRECP	AIRTMP	SNOTMP	SNOWF	RAINF	PRAIN	MELT	SNOWE	WYIELD	PACK	PACKF	PACKW	PACKI	PDEPTH	COVINDX	NEGHTS	XLNMELT	RDENPKF	SKYCLEAR	SNOCOV	DULLNESS	ALBEDO	PAKTEMP	DEWTMP	SURS	UZS	LZS	AGWS	SURO	IFWO	AGWO	PERO	TAET	PERC	INFIL	GWI	IGWI	AGWI	DEP	AVDEP	HRAD	AVVEL	SAREA	VOLUME	QIN	EVAP	RIPET	RO	TAU	WSSD	SCRSD	SOSED	SOBER	SSEDC	LSSED	LRSED	LBEDDEP	LDEPSCR	LROSED	SQO	WASHQS	SCRQS	SOQO	POQUAL	SOQUAL	IOQUAL	GOQUAL	POQC	CONC	CONCOUT	CONCSQAL	MATSQAL	MATIN	MATOUT	MATOSQAL	DOX	DOXMIN	DOXMAX	DOXAV	DOXX	BOD	BODX	NO3	NO3X	TAM	TAMX	NO2	NO2X	PO4	PO4X	SNH4	SNH4X	SPO4	SPO4X	PHYTO	PHYTOX	PHYCLA	BENAL	ORN	ORNX	ORP	ORPX	ORC	ORCX	NOX	DIN	TN	TP	PH	ALK	TIC	TICX	CO2	CO2X	TEMP
-	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0
 c-----------------------------------------------------------------------------------------
 c50  model simulation time period
 c
