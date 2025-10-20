@@ -23,11 +23,15 @@ cat("Starting 'LSPC_Postprocessing.R'...\n\n")
 #### Functions ####
 
 
-mainProcedure <- function (hucBased = TRUE) {
+mainProcedure <- function (hucBased) {
   
   # The DWRAT run can be either based on HUC-12 sub-basins or catchments
   # If HUC-12 sub-basins are used, sometimes the sub-basin may be split
   # into smaller units if there are multiple outlets in that sub-basin
+  
+  
+  
+  startTime <- Sys.time()
   
   
   
@@ -58,7 +62,7 @@ mainProcedure <- function (hucBased = TRUE) {
   
   # Get the Master Demand Table
   mdtDF <- makeSharePointPath(ws$MASTER_DEMAND_TABLE_CSV_PATH) %>%
-    read_csv()
+    read_csv(show_col_types = FALSE)
   
   
   
@@ -160,7 +164,7 @@ mainProcedure <- function (hucBased = TRUE) {
     
   } else {
     
-    dwratConn <- connMat
+    dwratConn <- connMat %>% select(-huc12)
     
   }
   
@@ -237,6 +241,13 @@ mainProcedure <- function (hucBased = TRUE) {
   
   # Output a completion message
   cat("\n\nThe script has finished running!\n\n")
+  
+  
+  
+  # Output script run duration
+  cat(paste0("The total script runtime was ", 
+             round(difftime(Sys.time(), startTime, units = "secs"), digits = 2),
+             " seconds\n\n"))
   
   
   
@@ -646,7 +657,9 @@ prepDemandData <- function (mdtDF, lastCatch, connMat, subWS, hucBased, flowsTo)
   
   # Use "LAST_CATCH" to join "DWRAT_SUBBASIN" to 'mdtDF'
   # Then, add "FLOWS_TO" from 'flowsTo' as well
+  # (Treat "LAST_CATCH" as a character column in both cases to ensure consistency)
   mdtDF <- mdtDF %>%
+    mutate(LAST_CATCH = as.character(LAST_CATCH)) %>%
     left_join(lastCatch %>%
                 select(DWRAT_SUBBASIN, BASIN) %>%
                 rename(LAST_CATCH = BASIN) %>%
@@ -703,7 +716,24 @@ outputAndRun <- function (mdtDF, roSupply, flowsTo, ws, lastCatch) {
   if (sum(flowsTo$FLOWS_TO == "SUBBASIN_000") == 1) {
     
     # If there's only one outlet, write the files to the "OutputData" folder
-    # without any special modifications
+    # without special modifications
+    
+    
+    
+    # There is one exception, however
+    # DWRAT will fail if the watershed lacks at least one appropriative and one riparian user
+    # Stop the script and alert the user if this occurs
+    if (mdtDF %>% filter(!is.na(RIPARIAN) & RIPARIAN == "Y") %>%
+        nrow() == 0 ||
+        mdtDF %>% filter(!is.na(APPROPRIATIVE) & APPROPRIATIVE == "APPROPRIATIVE") %>%
+        nrow() == 0) {
+      
+      stop(paste0("DWRAT will fail unless the watershed has at least one appropriative water right ",
+                  "and at least one riparian water right. That should pretty much always be the case. ",
+                  "There may be an error somewhere."))
+      
+    }
+    
     
     
     # Define a vector with the planned filenames
@@ -795,7 +825,6 @@ outputAndRun <- function (mdtDF, roSupply, flowsTo, ws, lastCatch) {
           filter(!is.na(RIPARIAN) & RIPARIAN == "Y") %>%
           nrow() == 0) {
         
-        
         mdtDF <- mdtDF %>%
           addDummyRow(isRiparian = TRUE, flowsToSplitList[[i]], lastCatch)
         
@@ -810,6 +839,25 @@ outputAndRun <- function (mdtDF, roSupply, flowsTo, ws, lastCatch) {
         
         mdtDF <- mdtDF %>%
           addDummyRow(isRiparian = FALSE, flowsToSplitList[[i]], lastCatch)
+        
+      }
+      
+      
+      
+      # If there is only one sub-basin in the flow path, add a dummy sub-basin before it
+      # There will be no flow contribution from that sub-basin, but it still needs to be there
+      # (Otherwise, the DWRAT script curtails water rights for no reason)
+      if (flowsToSplitList[[i]] %>% nrow() == 1) {
+        
+        # Add a new dummy sub-basin to 'flowsTo'
+        flowsToSplitList[[i]] <- flowsToSplitList[[i]] %>%
+          bind_rows(data.frame("BASIN" = "SUBBASIN_REMOVE_THIS",
+                               "FLOWS_TO" = flowsToSplitList[[i]]$BASIN[1]))
+        
+        
+        # Add a column of zeroes for this fake sub-basin to 'roSupply' too
+        roSupply <- roSupply %>%
+          mutate("REMOVE_THIS" = 0)
         
       }
       
@@ -835,7 +883,7 @@ outputAndRun <- function (mdtDF, roSupply, flowsTo, ws, lastCatch) {
       
       # Supply
       roSupply %>%
-        select(Date, all_of(str_remove(flowsToSplitList[[i]]$BASIN, "^SUBBASIN_"))) %>%
+        select(Date, all_of(as.character(str_remove(flowsToSplitList[[i]]$BASIN, "^SUBBASIN_")))) %>%
         write_csv(filePaths[2])
       
       
@@ -859,6 +907,17 @@ outputAndRun <- function (mdtDF, roSupply, flowsTo, ws, lastCatch) {
       }
       
     } # End of 'i' loop through 'flowsToSplitList'
+    
+    
+    
+    # If DWRAT was run successfully for all output files, 
+    # combine the DWRAT outputs from different iterations into combined files
+    if (useDWRAT) {
+      
+      combineOutputs(ws, length(flowsToSplitList))
+      
+    }
+    
     
   }
   
@@ -1143,9 +1202,13 @@ createModelOutputs_OneUser <- function (flowsToSplitList, i, userDF, roSupply, w
   # "ALLOCATIONS" and "DEMAND" can be copied from 'appBasinOutput'
   # "USER" is either NA or the one water right's application number 
   # (if the right isn't riparian)
+  # "BASIN" should appear as well (including a column titled "PRIORITY")
+  # "PRIORITY" is 1 if the one water right in the flow path is appropriative
+  # (For riparian users, )
   appUserOutput <- appBasinOutput %>%
-    select(contains("_ALLOCATIONS"), contains("_DEMAND")) %>%
-    mutate(USER = if_else(isRiparian, NA_character_, userDF$APPLICATION_NUMBER[1]))
+    select(contains("_ALLOCATIONS"), contains("_DEMAND"), BASIN) %>%
+    mutate(USER = if_else(isRiparian, NA_character_, userDF$APPLICATION_NUMBER[1]),
+           PRIORITY = if_else(isRiparian, NA_real_, 1))
   
   
   
@@ -1164,20 +1227,25 @@ createModelOutputs_OneUser <- function (flowsToSplitList, i, userDF, roSupply, w
   
   # Sort the columns in 'appUserOutput'
   # The desired order is "ALLOCATIONS", "CURTAILMENT", "DEMAND", and "SHORTAGE_%"
-  # with "USER" at the beginning
+  # with "USER" at the beginning and both "BASIN" and "PRIORITY" at the end
   appUserOutput <- appUserOutput %>%
     select(USER, sort(names(appUserOutput) %>% 
-                        str_subset("USER", negate = TRUE)))
+                        str_subset("USER", negate = TRUE) %>% 
+                        str_subset("BASIN", negate = TRUE) %>% 
+                        str_subset("PRIORITY", negate = TRUE)),
+           BASIN, PRIORITY)
   
   
   
   # Prepare the riparian user matrix next
   # It has the exact same columns as 'appUserOutput'
-  # However, "USER" will have a different value
+  # However, "USER" and "PRIORITY" will have a different value
   # "USER" is either NA or the one water right's application number 
   # (if the right isn't appropriative)
+  # The same applies to "PRIORITY" (with '10000000' as the priority date for riparian users)
   ripUserOutput <- appUserOutput %>%
-    mutate(USER = if_else(isRiparian, userDF$APPLICATION_NUMBER[1], NA_character_))
+    mutate(USER = if_else(isRiparian, userDF$APPLICATION_NUMBER[1], NA_character_),
+           PRIORITY = if_else(isRiparian, 10000000, NA_real_))
   
   
   
@@ -1339,15 +1407,19 @@ createModelOutputs_OneUser <- function (flowsToSplitList, i, userDF, roSupply, w
 
 
 
-addDummyRow <- function (mdtDF, isRiparian, flowsTo, lastCatch) {
+addDummyRow <- function (mdtDF, isRiparian, flowsTo, lastCatch, demandVal = 1E-10) {
   
-  # Create a fake water right with no demand data
+  # Create a fake water right with almost zero demand data
   # DWRAT requires at least one each of riparian and appropriative users to run,
   # but no flow should be allocated to them
   
   
   # Catchment and basin location information is set to the final DWRAT sub-basin in the flow path
   # (The one that drains into "SUBBASIN_000")
+  
+  
+  # If the dummy right's demand is given as 0, the Paradigm DWRAT script sets their demand to 0.00002
+  # By setting it beforehand here, a smaller demand value can be used
   
   
   
@@ -1378,18 +1450,18 @@ addDummyRow <- function (mdtDF, isRiparian, flowsTo, lastCatch) {
   dummyFrame <- data.frame(APPLICATION_NUMBER = "REMOVE_THIS",
                            ORIGINAL_APPLICATION_NUMBER = "REMOVE_THIS",
                            # Diversion Data: All zeroes
-                           TOTAL_EXPECTED_ANNUAL_DIVERSION = 0,
-                           TOTAL_MAY_SEPT_DIV = 0,
-                           # Priority Date: Set to 9999-12-31 so it's always the lowest priority
-                           ASSIGNED_PRIORITY_DATE_SUB = 99991231,
+                           TOTAL_EXPECTED_ANNUAL_DIVERSION = demandVal * 12,
+                           TOTAL_MAY_SEPT_DIV = demandVal * 5,
+                           # Priority Date: Always 1000-00-00 for Riparian
+                           # For appropriative, set to 9999-12-31 so it's always the lowest priority
+                           ASSIGNED_PRIORITY_DATE_SUB = if_else(isRiparian, 10000000, 99991231),
                            # No face value or initial diversion amount
                            INI_REPORTED_DIV_AMOUNT_AF = if_else(isRiparian, 0, NA_real_),
                            FACE_VALUE_AMOUNT_AF = if_else(isRiparian, NA_real_, 0),
                            # Riparian vs Appropriative 
                            RIPARIAN = if_else(isRiparian, "Y", "N"),
                            APPROPRIATIVE = if_else(isRiparian, NA_character_, "APPROPRIATIVE"), 
-                           # Zero Demand = "Yes"
-                           ZERO_DEMAND = "Y",
+                           WATER_RIGHT_TYPE = if_else(isRiparian, "Statement of Div and Use", "Appropriative"), 
                            # Take the final DWRAT sub-basin in the flow path
                            CATCHMENT = CATCHMENT,
                            BASIN = BASIN,
@@ -1397,14 +1469,14 @@ addDummyRow <- function (mdtDF, isRiparian, flowsTo, lastCatch) {
   
   
   
-  # Make all of the monthly demand values equal to 0
-  dummyFrame[paste0(toupper(month.abb), "_MEAN_DIV")] <- 0
+  # Make all of the monthly demand values equal to a very small value (almost 0)
+  dummyFrame[paste0(toupper(month.abb), "_MEAN_DIV")] <- demandVal
   
   
   
   # Set several yes/no columns to "N"
   dummyFrame[c("FULLY NON-CONSUMPTIVE", "POWER_DEMAND_ZEROED",
-               "PRE_1914")] <- "N"
+               "PRE_1914", "ZERO_DEMAND", "NULL_DEMAND")] <- "N"
   
   
   
@@ -1651,5 +1723,140 @@ locateAndReplace <- function (dwratScript, matchPattern, newPath) {
 
 
 
+combineOutputs <- function (ws, numFlowPaths) {
+  
+  # If a watershed was split into multiple flow paths, it had a separate DWRAT run for each path
+  # Four output files are saved from each DWRAT run
+  # Since they all follow the same format, combine the files from different flow paths
+  # into four output files
+  
+  
+  
+  # Initialize empty data frames for each of the output files
+  combinedBasinApp <- tibble()
+  
+  combinedBasinRip <- tibble()
+  
+  combinedUserApp <- tibble()
+  
+  combinedUserRip <- tibble()
+  
+  
+  
+  
+  # Iterate through every flow path
+  for (i in 1:numFlowPaths) {
+    
+    # Read in this flow path's DWRAT basin outputs
+    tempBasinApp <- read_csv(paste0("OutputData/", ws$ID, "_basin_appropriative_output_", i, ".csv"),
+                             show_col_types = FALSE, col_types = cols(.default = col_character())) %>%
+      filter(BASIN != "SUBBASIN_REMOVE_THIS")
+    
+    tempBasinRip <- read_csv(paste0("OutputData/", ws$ID, "_basin_riparian_output_", i, ".csv"),
+                             show_col_types = FALSE, col_types = cols(.default = col_character())) %>%
+      filter(BASIN != "SUBBASIN_REMOVE_THIS")
+    
+    
+    
+    # Append these temporary data frames to the combined variables
+    combinedBasinApp <- bind_rows(combinedBasinApp, tempBasinApp)
+    
+    combinedBasinRip <- bind_rows(combinedBasinRip, tempBasinRip)
+    
+    
+    
+    # If the flow path had no users, there wouldn't be any user files for this iteration
+    # Check first if those files exist
+    if (!file.exists(paste0("OutputData/", ws$ID, "_user_appropriative_output_", i, ".csv")) ||
+        !file.exists(paste0("OutputData/", ws$ID, "_user_riparian_output_", i, ".csv"))) {
+      
+      
+      # If there really are no users, the sum of the demands in both of the basin files should be 0
+      if (sum(tempBasinApp %>% select(contains("_DEMAND")) %>% mutate(across(everything(), as.numeric))) == 0 && 
+          sum(tempBasinRip %>% select(contains("_DEMAND")) %>% mutate(across(everything(), as.numeric))) == 0) {
+        
+        # In that case, just skip to the next iteration
+        next
+      
+        
+      # If the basin files do contain demand values, that's an indication of an error
+      # User files should exist in that scenario
+      } else {
+        
+        stop(paste0("'OutputData/", ws$ID, "_user_appropriative_output_", i, ".csv' and/or ",
+                    "'OutputData/", ws$ID, "_user_riparian_output_", i, ".csv' could not be found! ",
+                    "\nSince there are non-zero demands in the basin files, there should be user files too."))
+        
+      }
+      
+      
+    }
+    
+    
+    
+    # This code only runs if user files exist
+    # Try to read them in
+    tempUserApp <- read_csv(paste0("OutputData/", ws$ID, "_user_appropriative_output_", i, ".csv"),
+                            show_col_types = FALSE, col_types = cols(.default = col_character())) %>%
+      filter(USER != "REMOVE_THIS")
+    
+    tempUserRip <- read_csv(paste0("OutputData/", ws$ID, "_user_riparian_output_", i, ".csv"),
+                            show_col_types = FALSE, col_types = cols(.default = col_character())) %>%
+      filter(USER != "REMOVE_THIS")
+    
+    
+    
+    # Update the combined data frames using these user files too
+    combinedUserApp <- bind_rows(combinedUserApp, tempUserApp)
+    
+    combinedUserRip <- bind_rows(combinedUserRip, tempUserRip)
+    
+  }
+  
+  
+  
+  # Make columns numeric
+  # (Everything except the "BASIN" and "USER" columns)
+  combinedBasinApp <- combinedBasinApp %>%
+    mutate(across(!BASIN, as.numeric))
+  
+  combinedBasinRip <- combinedBasinRip %>%
+    mutate(across(!BASIN, as.numeric))
+  
+  combinedUserApp <- combinedUserApp %>%
+    mutate(across(!USER & !BASIN, as.numeric))
+  
+  combinedUserRip <- combinedUserRip %>%
+    mutate(across(!USER & !BASIN, as.numeric))
+  
+  
+  
+  # Write the combined variables to files
+  combinedBasinApp %>%
+    write_csv(paste0("OutputData/", ws$ID, "_basin_appropriative_output_combined.csv"))
+  
+  combinedBasinRip %>%
+    write_csv(paste0("OutputData/", ws$ID, "_basin_riparian_output_combined.csv"))
+  
+  combinedUserApp %>%
+    write_csv(paste0("OutputData/", ws$ID, "_user_appropriative_output_combined.csv"))
+  
+  combinedUserRip %>%
+    write_csv(paste0("OutputData/", ws$ID, "_user_riparian_output_combined.csv"))
+  
+  
+  
+  # Return nothing
+  return()
+  
+}
+
+
+
 #### Execution ####
-mainProcedure()
+mainProcedure(hucBased = TRUE)
+
+
+
+# Clean the environment
+remove(list = ls())
