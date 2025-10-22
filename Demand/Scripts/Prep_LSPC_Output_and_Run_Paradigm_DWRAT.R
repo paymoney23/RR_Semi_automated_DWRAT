@@ -1,5 +1,6 @@
 # After the LSPC model has been run successfully, 
-# this script can prepare that data for the Paradigm DWRAT
+# this script can prepare that data for the Paradigm DWRAT 
+# and then execute DWRAT
 
 
 
@@ -16,14 +17,14 @@ require(readxl)
 
 
 
-cat("Starting 'LSPC_Postprocessing.R'...\n\n")
+cat("Starting 'Prep_LSPC_Output_and_Run_Paradigm_DWRAT.R'...\n\n")
 
 
 
 #### Functions ####
 
 
-mainProcedure <- function (hucBased) {
+mainProcedure <- function (hucBased = TRUE) {
   
   # The DWRAT run can be either based on HUC-12 sub-basins or catchments
   # If HUC-12 sub-basins are used, sometimes the sub-basin may be split
@@ -37,6 +38,24 @@ mainProcedure <- function (hucBased) {
   
   # Select a watershed
   source("Scripts/Watershed_Selection.R")
+  
+  
+  
+  # Output a message about the script run (HUC-12 or catchment-based)
+  if (hucBased) {
+    
+    cat("\nRunning script with DWRAT sub-basins based on HUC-12 sub-basins!\n\n\n")
+    
+  } else {
+    
+    cat("\nRunning script with DWRAT sub-basins based on catchments!\n\n\n")
+    
+  }
+  
+  
+  
+  # Clear the "OutputData" folder of model files from previous script runs
+  deleteOldOutputs(ws$ID)
   
   
   
@@ -252,6 +271,59 @@ mainProcedure <- function (hucBased) {
   
   
   # Return nothing
+  return()
+  
+}
+
+
+
+deleteOldOutputs <- function (wsID) {
+  
+  # Clear out script-related output files from the "OutputData" folder
+  # Previous runs of this script may have introduced those files
+  # If not removed, they can interfere with the file combination process at the end
+  
+  
+  
+  # Regex strings for DWRAT input and output files produced by this script
+  # These will be used to located files in the "OutputData" folder and delete them
+  removalStrings <- c("_formatted_demand",
+                      "_formatted_supply",
+                      "_generated_basins",
+                      "_basin_appropriative_output",
+                      "_basin_riparian_output",
+                      "_user_appropriative_output",
+                      "_user_riparian_output") %>%
+    paste0("^", wsID, .)
+  
+  
+  
+  # Delete the input and output files
+  removalStrings %>%
+    map(~ list.files("OutputData", pattern = ., full.names = TRUE) %>% unlink())
+  
+  
+  
+  # Make sure the files were successfully deleted
+  # Otherwise, output an error message
+  if (TRUE %in% map_lgl(removalStrings, 
+                        ~ length(list.files("OutputData", pattern = ., full.names = TRUE)) > 1)) {
+    
+    cat(paste0("\n\n\nPlease manually delete these files:\n\n",
+               map(removalStrings, 
+                   ~ list.files("OutputData", pattern = ., full.names = TRUE)) %>%
+                 unlist() %>% paste0(collapse = "\n"),
+               "\n\n"))
+    
+    stop(paste0("Could not delete all of the generated files from the previous run ",
+                "of this script. This is a necessary step to avoid accidental errors.\n\n",
+                "Please manually delete the files listed above.\n"))
+    
+  }
+  
+  
+  
+  # If there are no errors, return nothing
   return()
   
 }
@@ -1204,8 +1276,11 @@ createModelOutputs_OneUser <- function (flowsToSplitList, i, userDF, roSupply, w
   # (if the right isn't riparian)
   # "BASIN" should appear as well (including a column titled "PRIORITY")
   # "PRIORITY" is 1 if the one water right in the flow path is appropriative
-  # (For riparian users, )
+  # (For riparian users, it's 10000000, but that will be set later)
+  # If there are multiple basins in 'appBasinOutput', filter only to the sub-basin
+  # that the user is present in
   appUserOutput <- appBasinOutput %>%
+    filter(BASIN == userDF$BASIN[1]) %>%
     select(contains("_ALLOCATIONS"), contains("_DEMAND"), BASIN) %>%
     mutate(USER = if_else(isRiparian, NA_character_, userDF$APPLICATION_NUMBER[1]),
            PRIORITY = if_else(isRiparian, NA_real_, 1))
@@ -1246,6 +1321,12 @@ createModelOutputs_OneUser <- function (flowsToSplitList, i, userDF, roSupply, w
   ripUserOutput <- appUserOutput %>%
     mutate(USER = if_else(isRiparian, userDF$APPLICATION_NUMBER[1], NA_character_),
            PRIORITY = if_else(isRiparian, 10000000, NA_real_))
+  
+  
+  
+  # Error Check
+  stopifnot(nrow(appBasinOutput) > 0 && nrow(ripBasinOutput) > 0)
+  stopifnot(nrow(appUserOutput) > 0 && nrow(ripUserOutput) > 0)
   
   
   
@@ -1743,7 +1824,6 @@ combineOutputs <- function (ws, numFlowPaths) {
   
   
   
-  
   # Iterate through every flow path
   for (i in 1:numFlowPaths) {
     
@@ -1854,7 +1934,7 @@ combineOutputs <- function (ws, numFlowPaths) {
 
 
 #### Execution ####
-mainProcedure(hucBased = TRUE)
+mainProcedure(hucBased = FALSE)
 
 
 
