@@ -12,9 +12,7 @@ makeSharePointPath <- function (filePathFragment) {
   
   # (This function assumes that the SharePoint filepath is "C:/Users/[username]/Water Boards/Supply and Demand Assessment - Documents/...")
   
-  system("whoami", intern = TRUE) %>%
-    str_split("\\\\") %>% unlist() %>% tail(1) %>%
-    paste0("C:/Users/", ., "/Water Boards/Supply and Demand Assessment - Documents/", filePathFragment)
+  paste0("C:/Users/", Sys.info()[["user"]], "/Water Boards/Supply and Demand Assessment - Documents/", filePathFragment)
   
 }
 
