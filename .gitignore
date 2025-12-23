@@ -40,4 +40,7 @@ Demand/.Rproj.user
 Supply/.Rhistory
 Demand/.Rhistory
 
+# Ignore changes to the primary control file
+Repo_Control_File.xlsx
+
 # https://git-scm.com/docs/gitignore
