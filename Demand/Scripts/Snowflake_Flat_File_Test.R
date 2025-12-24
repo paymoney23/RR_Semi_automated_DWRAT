@@ -42,11 +42,17 @@ query <- dbSendQuery(sf_con,
 AR_flat_file <- dbFetch(query)
 
 # Export a subset of AR_flat_file as a CSV for inspection
-# ar_subset <- head(AR_flat_file, 100)
-# write.csv(x = ar_subset, 
-#           file = "OutputData/ar_subset.csv",
-#           row.names = FALSE)
+#ar_subset <- AR_flat_file %>% filter(ANNUALREPORT_WR_WATERRIGHTID__C %in% c("A001029", "S023515"))
 
+ar_subset <- AR_flat_file %>% relocate(ANNUALREPORT_WR_WATERRIGHTID__C,
+                                    .before = everything())
+
+ar_subset <- head(ar_subset,100)
+
+write.xlsx( x = ar_subset,
+            file = "OutputData/ar_subset.xlsx",
+            sheetName = "ar_subset",
+            overWrite = TRUE)
 
 # Remove excessive columns
 # Define the list of columns to keep
@@ -109,6 +115,9 @@ ar_subset <- AR_flat_file %>%
 ar_subset <- ar_subset %>%
   rename_with(~ str_remove(.x, "^ANNUALREPORT_WR_"))
 
+#Export ar_subset columns to CSV
+#write.csv(x = names(ar_subset), file = "IntermediateData/ar_subset_cols.csv", row.names = FALSE)
+
 
 # Import ewrims_water_use_report_extended flat file ----
 ewrims_water_use_report_extended <- read.csv("RawData/water_use_report_extended.csv")
@@ -126,7 +135,7 @@ ar_ff_right_count <- ar_subset %>%
   distinct(WATERRIGHTID__C) %>%
   nrow()
 
-print(ar_ff_right_count) #44519 unique water rights in CalWATRS Annual Report Flat File
+print(ar_ff_right_count) #44,519 unique water rights in CalWATRS Annual Report Flat File
 
 # Are there any rights in eWRIMS that don't exist in CalWATRS? 
 ewrims_only <- anti_join(x = ewrims_water_use_report_extended, 
@@ -144,7 +153,7 @@ calwatrs_only <- anti_join(x = ar_subset,
                 select("WATERRIGHTID__C") %>%
                 distinct()
 
-print(calwatrs_only) #6093 rights
+print(calwatrs_only) #6,093 rights
 
 # Whittle to Russian River Rights-----
 
@@ -168,8 +177,8 @@ head(rr_ar_subset_final,10)
 # Set the file path
 excel_path = "OutputData/rr_ar_wb_inspection.xlsx"
 
-# Load the existing rr_ar_subset workbook object
-rr_ar_wb <-loadWorkbook(file = excel_path)
+# Createthe existing rr_ar_subset workbook object
+rr_ar_wb <-createWorkbook(file = excel_path)
 
 new_sheet <- "rr_ar_subset"
 new_table <- "rr_ar_subset_table"
