@@ -37,6 +37,7 @@ eWRIMS_List <- inner_join(x = Application_Number,
                           y = ewrims_data,
                           by = "APPLICATION_NUMBER") %>% unique()
 # Produces 2271 unique records for the Russian River watershed on 9/20/2024
+# Produces 125 unique records for the San Lorenzo watershed on 6/12/2026
 
 eWRIMS_Names = colnames(eWRIMS_List) %>% sort()
 eWRIMS_Names
@@ -57,7 +58,9 @@ File_List = list.files(if_else(dir.exists(makeSharePointPath(ws$EWRIMS_REPORTS_F
                                makeSharePointPath(ws$EWRIMS_REPORTS_FOLDER_PATH), 
                                ws$EWRIMS_REPORTS_FOLDER_PATH)) %>%
   str_remove(pattern = "\\.pdf$")
-eWRIMS_List = eWRIMS_List %>% filter(!(APPLICATION_NUMBER %in% File_List)) #Remove Application_Numbers of already downloaded PDFs
+
+#Remove Application_Numbers of already downloaded PDFs
+eWRIMS_List = eWRIMS_List %>% filter(!(APPLICATION_NUMBER %in% File_List))
 
 # Bulk Download Watershed ewrims report PDFs----
 for (i in 1:nrow(eWRIMS_List)) {
